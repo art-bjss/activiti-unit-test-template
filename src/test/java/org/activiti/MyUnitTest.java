@@ -1,35 +1,46 @@
 package org.activiti;
 
-import org.activiti.engine.impl.test.JobTestHelper;
-import org.activiti.engine.runtime.ProcessInstance;
 import org.activiti.engine.task.Task;
 import org.activiti.engine.test.ActivitiRule;
 import org.activiti.engine.test.Deployment;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import java.util.Collections;
+import java.util.Map;
 
 public class MyUnitTest {
 
     @Rule
     public ActivitiRule activitiRule = new ActivitiRule();
 
+    @Before
+    public void startAync() {
+        activitiRule.getProcessEngine().getProcessEngineConfiguration().getAsyncExecutor().start();
+    }
+
     @Test
     @Deployment(resources = {"org/activiti/test/my-process.bpmn20.xml"})
     public void test() throws InterruptedException {
-        ProcessInstance processInstance = activitiRule.getRuntimeService().startProcessInstanceByKey("my-process");
-        assertNotNull(processInstance);
+
+        for (int i = 0; i < 10; i++) {
+            createAndCompleteProcess(i);
+        }
+
+    }
+
+    private void createAndCompleteProcess(int i) throws InterruptedException {
+        activitiRule.getRuntimeService().startProcessInstanceByKey("my-process");
 
         Task task = activitiRule.getTaskService().createTaskQuery().singleResult();
-        assertEquals("Activiti is awesome!", task.getName());
 
-        activitiRule.getTaskService().complete(task.getId());
+        Map<String, Object> processVariables = Collections.singletonMap("var1", (Object) ("TaskMDCValue" + i));
 
-        JobTestHelper.waitForJobExecutorToProcessAllJobs(activitiRule.getProcessEngine().getProcessEngineConfiguration(), activitiRule.getManagementService(), 100000, 25);
+        activitiRule.getTaskService().complete(task.getId(), processVariables);
 
-
+        // await async completion
+        Thread.sleep(100);
     }
 
 }

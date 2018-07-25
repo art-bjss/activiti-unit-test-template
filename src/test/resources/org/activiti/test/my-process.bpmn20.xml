@@ -11,15 +11,24 @@
         <sequenceFlow id="flow1" sourceRef="start" targetRef="someTask"/>
 
         <userTask id="someTask" name="Activiti is awesome!"/>
-        <sequenceFlow id="flow2" sourceRef="someTask" targetRef="asyncScript"/>
+        <sequenceFlow id="flow2" sourceRef="someTask" targetRef="syncScript"/>
+
+        <scriptTask id="syncScript" name="More stuff" scriptFormat="groovy">
+            <script>
+                org.slf4j.MDC.put("MDCKEY", var1)
+                org.slf4j.LoggerFactory.getLogger("syncScript").info("sync task log");
+            </script>
+        </scriptTask>
+        <sequenceFlow id="flow3" sourceRef="syncScript" targetRef="asyncScript"/>
+
 
         <scriptTask id="asyncScript" name="More stuff" scriptFormat="groovy" activiti:async="true">
             <script>
-                org.slf4j.LoggerFactory.getLogger("script").info("async task log");
+                org.slf4j.LoggerFactory.getLogger("asynScript").info("async task log");
             </script>
         </scriptTask>
 
-        <sequenceFlow id="flow3" sourceRef="asyncScript" targetRef="end"/>
+        <sequenceFlow id="flow4" sourceRef="asyncScript" targetRef="end"/>
 
         <endEvent id="end"/>
 
